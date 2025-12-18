@@ -31,7 +31,7 @@ fish_parameters = read.csv("data/fish_parameters.csv")
 ##### SECTION 2: SUBSET DATA AND COMBINE ALL ISOTOPE DATA #####
 # filter for only prior to week 8
 iso_data = iso_data_all %>%
-  filter(Week >= 8)
+  filter(Week >= 0) #adjust based on seasonailty interests wk0 includes all data
 
 test2 = iso_data %>%
   filter(CommonName == "Black Sea Bass")
@@ -70,8 +70,8 @@ iso_data = rbind(iso_data, iso_data_single, phyto, zoop)
 iso_data = unique(iso_data)
 
 # subset biomass data for only week 2 and 5 seine
-biomass_data = biomass_data %>%
-  filter(Date %in% c("9/7/23", "10/4/23"))
+#biomass_data = biomass_data %>%
+#  filter(Date %in% c("9/7/23", "10/4/23"))
 
 # make dataframe with summary length and iso data
 mean_length = aggregate(TL_cm ~ Species, data = iso_data, FUN = mean)
@@ -125,8 +125,8 @@ fish_parameters_length$PB[fish_parameters_length$Species == "Busycon carica"] = 
 ##### CLUSTER BASED ON INSTINCT #####
 # define groups
 pelagic_fish = c("Anchovy", "Silverside", "Skilletfish", "Pigfish", "Gray Snapper", "Bluefish")
-predator_fish = c("American Eel")
-benthic_predators = c("Northern Pipefish", "Tautog", "Striped Killifish", "Silver Perch")
+predator_fish = c("American Eel", "Spot", "Black Drum")
+benthic_predators = c("Northern Pipefish", "Tautog", "Striped Killifish", "Silver Perch", "Weakfish", "Smallmouth Flounder", "Mummichog", "Summer Flounder", "Cunner")
 structure_fish = c("Atlantic Croaker", "Feather Blenny", "Blackcheek Tonguefish", "Naked Goby", "Oyster Toadfish",
                    "Black Sea Bass", "Smallmouth Flounder")
 detritivores = c("White Mullet", "Sheepshead Minnow")
@@ -175,7 +175,8 @@ biomass_data = biomass_data %>%
     CommonName %in% whelk ~ "Whelk",
     CommonName %in% detritivores ~ "Detritivore",
     TRUE ~ "Other"
-  ))
+  )) %>% 
+  filter(FunctionalGroup != "Other")
 
 ## calculate proportions of biomass for each group ##
 # drop those without weights
@@ -303,7 +304,7 @@ ggplot(iso_data, aes(x = d13C, y = d15N, color = FunctionalGroup, shape = Functi
   geom_point(data = all_groups, aes(x = d13C_w, y = d15N_w, color = FunctionalGroup, shape = FunctionalGroup, fill = FunctionalGroup), 
              inherit.aes = FALSE, size = 3) +
   theme_minimal() +
-  scale_shape_manual(values = 6:20) +
+  scale_shape_manual(values = 6:21) +
   xlim(c(-23, -8)) +
   ylim(c(3.5, 16.5)) +
   labs(x = 'd13C', y = 'd15N', title = 'Late Season Bi-Plot')
@@ -337,21 +338,21 @@ all_groups$biomass[all_groups$FunctionalGroup == "Oysters"]    =  407.88 # estim
 
 ##### DIET ESTIMATION #####
 # list of functional groups that need diet estimation
-predator_list = c("BenthicInverts", "BenthicPredators", "BlueCrabs", "Detritivore", "MudSnails", "PelagicFish", "PredatorFish", 
+predator_list = c("BenthicInvertebrates", "BenthicPredators", "BlueCrabs", "Detritivore", "MudSnails", "PelagicFish", "PredatorFish", 
                   "StructureFish", "Whelk", "Oysters")
 
 # list of diets for each predator
 prey_list = list(
   c("Phytoplankton", "BenthicAlg", "BenthicAlg2", "Zooplankton", "Detritus"), # diet for benthic invertebrates
-  c("BenthicAlg", "BenthicAlg2", "Zooplankton", "BenthicInverts", "MudSnails", "PelagicFish", "Detritus"), # diet for benthic predators
-  c("BenthicAlg", "BenthicAlg2", "BenthicInverts", "PelagicFish", "BenthicPredators", "StructureFish", "MudSnails", 
+  c("BenthicAlg", "BenthicAlg2", "Zooplankton", "BenthicInvertebrates", "MudSnails", "PelagicFish", "Detritus"), # diet for benthic predators
+  c("BenthicAlg", "BenthicAlg2", "BenthicInvertebrates", "PelagicFish", "BenthicPredators", "StructureFish", "MudSnails", 
     "Detritus"), # blue crab diet
-  c("Detritus", "Benthic Alg", "Benthic Alg2", "BenthicInverts"), # diet for detritivores
+  c("Detritus", "Benthic Alg", "Benthic Alg2", "BenthicInvertebrates"), # diet for detritivores
   c("BenthicAlg", "BenthicAlg2", "Detritus"), # diet for mud snails
   c("MudSnails", "Phytoplankton", "Zooplankton", "Detritus"), # diet for pelagic fish
-  c("BenthicInverts", "BenthicPredators", "MudSnails", "PelagicFish", "StructureFish", "Oysters"), # diet for predator fish
-  c("BenthicInverts", "BenthicAlg", "BenthicAlg2", "MudSnails", "PelagicFish", "Zooplankton", "Detritus"), # diet for structure fish
-  c("BenthicInverts", "MudSnails", "Detritus", "Oysters"), # diet for whelk
+  c("BenthicInvertebrates", "BenthicPredators", "MudSnails", "PelagicFish", "StructureFish", "Oysters"), # diet for predator fish
+  c("BenthicInvertebrates", "BenthicAlg", "BenthicAlg2", "MudSnails", "PelagicFish", "Zooplankton", "Detritus"), # diet for structure fish
+  c("BenthicInvertebrates", "MudSnails", "Detritus", "Oysters"), # diet for whelk
   c("Phytoplankton", "Detritus") # diet for oysters
 )
 
@@ -483,7 +484,7 @@ REco.params$model[, Fishing.disc := disc]
 
 ##### PULL DIETS FROM SIMMR OUPUT AND PASS TO RPATH #####
 # list of simmr objects in same order as predator_list
-simmr_list = list(simmr_BenthicInverts, simmr_BenthicPredators, simmr_BlueCrabs, simmr_Detritivore, simmr_MudSnails, 
+simmr_list = list(simmr_BenthicInvertebrates, simmr_BenthicPredators, simmr_BlueCrabs, simmr_Detritivore, simmr_MudSnails, 
                   simmr_PelagicFish,  simmr_PredatorFish, simmr_StructureFish, simmr_Whelk, simmr_Oysters)
 
 # loop to pull out the means
@@ -494,8 +495,16 @@ for (i in 1:length(simmr_list)) {
   assign(paste0("diet_", predator_list[i]), simmr.diet)
 }
 
+# standard deviation loop
+for (i in 1:length(simmr_list)) {
+  # extract means
+  simmr.sd = simmr_diet_output_dist(simmr_list[[i]], all_groups$FunctionalGroup)
+  # save simmr output with predator name
+  assign(paste0("diet_", predator_list[i]), simmr.sd)
+}
+
 # pass diets to Rpath
-REco.params$diet[, BenthicInverts := c(diet_BenthicInverts)]
+REco.params$diet[, BenthicInvertebrates := c(diet_BenthicInvertebrates)]
 REco.params$diet[, BenthicPredators := c(diet_BenthicPredators)]
 REco.params$diet[, BlueCrabs := c(diet_BlueCrabs)]
 REco.params$diet[, Detritivore := c(diet_Detritivore)]
@@ -511,4 +520,4 @@ REco.params$diet[, Zooplankton := c(rep(0, 12), 1, 0, 0)]
 REco.params$model
 REco.params$diet
 
-write.rpath.params(REco.params, "late_season_V2", path = "~/Documents/PhD/Chapter 2/Early and Late Models/Early vs Late Season Models/data")
+write.rpath.params(REco.params, "late_season_V2", path = "~EcosimThis\Eco_Mass") #fix me
